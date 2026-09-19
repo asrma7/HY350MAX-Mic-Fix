@@ -1,0 +1,70 @@
+name: Build and Release Magisk Module
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Read module version
+        id: module
+        shell: bash
+        run: |
+          VERSION=$(grep '^version=' module.prop | cut -d= -f2-)
+
+          if [ -z "$VERSION" ]; then
+            echo "Could not determine version from module.prop"
+            exit 1
+          fi
+
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Verify tag matches module version
+        shell: bash
+        run: |
+          EXPECTED_TAG="v${{ steps.module.outputs.version }}"
+
+          if [ "$GITHUB_REF_NAME" != "$EXPECTED_TAG" ]; then
+            echo "Tag does not match module.prop"
+            echo "Tag:      $GITHUB_REF_NAME"
+            echo "Expected: $EXPECTED_TAG"
+            exit 1
+          fi
+
+      - name: Build Magisk module ZIP
+        shell: bash
+        run: |
+          ZIP_NAME="HY350MAX-Mic-Fix-${GITHUB_REF_NAME}.zip"
+
+          zip -r "$ZIP_NAME" \
+            module.prop \
+            customize.sh \
+            service.sh \
+            system \
+            README.md \
+            LICENSE
+
+          echo "ZIP_NAME=$ZIP_NAME" >> "$GITHUB_ENV"
+
+      - name: Generate SHA-256
+        shell: bash
+        run: |
+          sha256sum "$ZIP_NAME" > "$ZIP_NAME.sha256"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            ${{ env.ZIP_NAME }}
+            ${{ env.ZIP_NAME }}.sha256
+          generate_release_notes: true

@@ -1,0 +1,7 @@
+id=hy350max-mic-fix
+name=HY350MAX Smart Mic / Assistant Fix
+version=1.0.0
+versionCode=100
+author=Ashutosh Sharma
+summary=Keeps in-app voice search working while limiting Google Assistant to the active Android launcher.
+description=Systemless key-layout override and boot service for the HY350MAX Bluetooth remote (VID 1d5a, PID c081). Prevents the mic button from globally launching Assistant, while launching Assistant only when the currently configured Android HOME launcher is foreground.

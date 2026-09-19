@@ -1,0 +1,20 @@
+#!/sbin/sh
+#################
+# Magisk Module Installer Script
+#################
+
+umask 022
+
+OUTFD=$2
+ZIPFILE=$3
+
+ui_print() { echo -e "ui_print $1\nui_print" >&$OUTFD; }
+
+require_new_magisk() {
+  ui_print "! Please install this ZIP from the Magisk app (Modules > Install from storage)."
+  exit 1
+}
+
+# Modern Magisk's app/module installer handles module ZIPs containing module.prop/customize.sh.
+# This legacy recovery entry is intentionally not used.
+require_new_magisk

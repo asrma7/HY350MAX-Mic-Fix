@@ -1,0 +1,23 @@
+# HY350MAX Bluetooth remote key layout
+# Based on the stock Vendor_1d5a_Product_c081.kl.
+# 0x246 (KEY_VOICECOMMAND) is intentionally left UNMAPPED.
+# The module service observes the raw event and launches Assistant only on the active HOME launcher.
+
+key 0x74    POWER
+key 0x71    VOLUME_MUTE
+key 0x67    DPAD_UP
+key 0x6a    DPAD_RIGHT
+key 0x6c    DPAD_DOWN
+key 0x69    DPAD_LEFT
+key 0x161   DPAD_CENTER
+key 0x9e    BACK
+key 0xd9    VOICE_ASSIST
+key 0x8b    SETTINGS
+key 0x73    VOLUME_UP
+key 0x72    VOLUME_DOWN
+key 0x3d    MOUSE
+key 220     MOUSE
+key 0xac    HOME
+key 0xf0    HOME
+key 0x282   PRJ_FOCUS_DN
+key 0x283   PRJ_FOCUS_UP
