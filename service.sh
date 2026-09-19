@@ -6,21 +6,35 @@ REMOTE_NAME="Bluetooth remote Keyboard"
 # Allow Android and Bluetooth to finish starting.
 sleep 10
 
-get_home_package() {
-    HOME_COMPONENT="$(cmd package resolve-activity --brief \
-        -a android.intent.action.MAIN \
-        -c android.intent.category.HOME 2>/dev/null | tail -n 1)"
+get_foreground_package() {
+    TOP="$(dumpsys activity activities 2>/dev/null |
+        grep -m1 'topResumedActivity')"
 
-    case "$HOME_COMPONENT" in
-        */*) echo "${HOME_COMPONENT%%/*}" ;;
-        *)   echo "" ;;
-    esac
+    # Extract package from:
+    # ... u0 com.example.app/.MainActivity ...
+    echo "$TOP" |
+        sed -n 's/.* u[0-9][0-9]* \([^/ ]*\)\/.*/\1/p'
+}
+
+is_home_package() {
+    PKG="$1"
+
+    [ -n "$PKG" ] || return 1
+
+    RESULT="$(cmd package query-activities --brief \
+        -a android.intent.action.MAIN \
+        -c android.intent.category.HOME \
+        "$PKG" 2>/dev/null)"
+
+    echo "$RESULT" | grep -q 'activities found:' || return 1
+    echo "$RESULT" | grep -qv '^0 activities found:'
 }
 
 while true; do
     EVENT=""
 
-    # eventX numbers can change after reboot/reconnection, so resolve by name.
+    # eventX numbers can change after reboot/reconnection.
+    # Find the remote by its input-device name instead.
     for e in /sys/class/input/event*; do
         if [ "$(cat "$e/device/name" 2>/dev/null)" = "$REMOTE_NAME" ]; then
             EVENT="/dev/input/$(basename "$e")"
@@ -39,26 +53,23 @@ while true; do
     while IFS= read -r line; do
         case "$line" in
             *"KEY_VOICECOMMAND"*"DOWN"*)
-                HOME_PKG="$(get_home_package)"
-                TOP="$(dumpsys activity activities 2>/dev/null | grep -m1 'topResumedActivity')"
+                FOREGROUND_PKG="$(get_foreground_package)"
 
-                if [ -n "$HOME_PKG" ]; then
-                    case "$TOP" in
-                        *"$HOME_PKG/"*)
-                            log -t "$TAG" "Mic pressed on HOME ($HOME_PKG) - launching Assistant"
-                            am start --user 0 -a android.intent.action.ASSIST >/dev/null 2>&1
-                            ;;
-                        *)
-                            log -t "$TAG" "Mic pressed outside HOME ($HOME_PKG) - ignored"
-                            ;;
-                    esac
+                if is_home_package "$FOREGROUND_PKG"; then
+                    log -t "$TAG" \
+                        "Mic pressed on HOME ($FOREGROUND_PKG) - launching Assistant"
+
+                    am start --user 0 \
+                        -a android.intent.action.ASSIST \
+                        >/dev/null 2>&1
                 else
-                    log -t "$TAG" "Could not resolve HOME launcher - ignored"
+                    log -t "$TAG" \
+                        "Mic pressed outside HOME ($FOREGROUND_PKG) - ignored"
                 fi
                 ;;
         esac
     done
 
-    # getevent exits if the Bluetooth input device disappears. Resolve it again.
+    # Bluetooth reconnection may create a different eventX.
     sleep 2
 done

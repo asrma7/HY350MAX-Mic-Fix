@@ -1,6 +1,6 @@
 id=hy350max-mic-fix
 name=HY350MAX Smart Mic / Assistant Fix
-version=1.1.0
+version=1.2.0
 versionCode=100
 author=Ashutosh Sharma
 summary=Keeps in-app voice search working while limiting Google Assistant to the active Android launcher.
